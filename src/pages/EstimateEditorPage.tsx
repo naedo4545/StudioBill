@@ -1373,9 +1373,12 @@ const EstimateEditorPage: React.FC = () => {
         <Dialog open={isTemplateDialogOpen} onClose={() => setIsTemplateDialogOpen(false)}>
           <DialogTitle>내 견적서 불러오기</DialogTitle>
           <DialogContent dividers>
-            {myTemplates.length === 0 ? (
-              <Typography>저장된 템플릿이 없습니다.</Typography>
-            ) : (
+            {myTemplates.length === 0 && (
+              <Typography sx={{ color: '#888', textAlign: 'center', my: 4 }}>
+                저장된 견적서가 없습니다
+              </Typography>
+            )}
+            {myTemplates.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {myTemplates.map((tpl, idx) => (
                   <Card key={tpl.id} sx={{

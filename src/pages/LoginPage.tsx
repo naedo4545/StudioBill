@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Box, Button, TextField, Typography, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -8,7 +9,9 @@ const LoginPage: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -18,9 +21,16 @@ const LoginPage: React.FC = () => {
     return () => { listener?.subscription.unsubscribe(); };
   }, []);
 
+  React.useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInfo('');
     setLoading(true);
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -28,6 +38,7 @@ const LoginPage: React.FC = () => {
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) setError(error.message);
+      else setInfo('인증 메일을 보냈습니다. 메일함을 확인해 주세요!');
     }
     setLoading(false);
   };
@@ -44,6 +55,7 @@ const LoginPage: React.FC = () => {
           <Typography variant="h6" sx={{ mb: 2 }}>로그인됨</Typography>
           <Typography sx={{ mb: 2 }}>{user.email}</Typography>
           <Button variant="contained" onClick={handleLogout}>로그아웃</Button>
+          <Button variant="outlined" sx={{ ml: 2 }} onClick={() => navigate('/')}>홈으로 가기</Button>
         </Paper>
       </Box>
     );
@@ -73,6 +85,7 @@ const LoginPage: React.FC = () => {
             sx={{ mb: 2 }}
           />
           {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
+          {info && <Typography color="primary" sx={{ mb: 2 }}>{info}</Typography>}
           <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading} sx={{ mb: 1 }}>
             {mode === 'login' ? '로그인' : '회원가입'}
           </Button>

@@ -23,9 +23,16 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 import Grid from '@mui/material/Grid';
 import { estimateTemplates } from '../data/templates';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import { supabase } from '../supabaseClient';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   const features = [
     {
@@ -110,13 +117,20 @@ const HomePage: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    const saved = localStorage.getItem('myEstimateTemplateList');
-    if (saved) {
-      const arr = JSON.parse(saved);
-      setMyTemplates(arr.slice(-3).reverse());
-    } else {
-      setMyTemplates([]);
-    }
+    (async () => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        setMyTemplates([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('estimates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('savedAt', { ascending: false });
+      if (!error) setMyTemplates(data || []);
+      else setMyTemplates([]);
+    })();
   }, []);
 
   const handleCalcKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -149,6 +163,7 @@ const HomePage: React.FC = () => {
             textAlign: 'center',
             boxShadow: '0 2px 16px rgba(0,0,0,0.3)',
             borderRadius: 3,
+            position: 'relative',
           }}
         >
           <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#fff' }}>
@@ -174,6 +189,15 @@ const HomePage: React.FC = () => {
             }}
           >
             견적서 시작하기
+          </Button>
+          {/* 로그아웃 버튼 - 헤더 우측 상단 */}
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={handleLogout}
+            sx={{ position: 'absolute', top: 24, right: 24, borderColor: '#fff', color: '#fff', fontWeight: 700, borderRadius: 2, '&:hover': { backgroundColor: '#fff', color: '#111', borderColor: '#111' } }}
+          >
+            로그아웃
           </Button>
         </Paper>
 
@@ -264,7 +288,7 @@ const HomePage: React.FC = () => {
         </Box>
 
         {/* 최근 저장된 견적서 */}
-        {myTemplates.length > 0 && (
+        {myTemplates.length > 0 ? (
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 1 }}>
               최근 저장된 견적서
@@ -283,6 +307,12 @@ const HomePage: React.FC = () => {
                 </Grid>
               ))}
             </Grid>
+          </Box>
+        ) : (
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ color: '#888', mb: 2 }}>
+              저장된 견적서가 없습니다
+            </Typography>
           </Box>
         )}
 
