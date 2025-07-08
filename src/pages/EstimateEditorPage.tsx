@@ -1003,8 +1003,9 @@ const EstimateEditorPage: React.FC = () => {
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <FormControl fullWidth>
-                <InputLabel>카테고리</InputLabel>
+                <InputLabel shrink={true}>카테고리</InputLabel>
                 <Select
+                  label="카테고리"
                   value={editingItem?.category || newItem.category}
                   onChange={(e) => handleItemChange('category', e.target.value)}
                 >
