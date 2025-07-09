@@ -144,7 +144,7 @@ const CompanySettingsPage: React.FC = () => {
       // Update
       result = await supabase
         .from('companies')
-        .update({ ...formData, logo: logoUrl, signature: signatureUrl, updatedAt: now })
+        .update({ ...formData, logo: logoUrl, signature: signatureUrl, updatedAt: now, user_id: userId })
         .eq('id', editingCompany.id)
         .eq('user_id', userId)
         .select();
