@@ -1,20 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Box, Card, CardContent, Button, Grid } from '@mui/material';
+import { supabase } from '../supabaseClient';
 
 const EstimateListPage: React.FC = () => {
   const [estimates, setEstimates] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem('estimates');
-    setEstimates(saved ? JSON.parse(saved) : []);
+    (async () => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('estimates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('createdAt', { ascending: false });
+      setEstimates(data || []);
+    })();
   }, []);
 
-  const handleDelete = (id: string) => {
-    const filtered = estimates.filter(e => e.id !== id);
-    setEstimates(filtered);
-    localStorage.setItem('estimates', JSON.stringify(filtered));
+  const handleDelete = async (id: string) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+    await supabase.from('estimates').delete().eq('id', id).eq('user_id', user.id);
+    // 목록 새로고침
+    const { data } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('createdAt', { ascending: false });
+    setEstimates(data || []);
   };
 
   return (

@@ -319,18 +319,35 @@ const EstimateEditorPage: React.FC = () => {
     link.click();
   };
 
-  const handleSaveEstimate = () => {
-    const saved = localStorage.getItem('estimates');
-    const estimates = saved ? JSON.parse(saved) : [];
-    let newEstimate = { ...estimate, id: estimate.id || Date.now().toString() };
-    // id 중복 방지
-    const idx = estimates.findIndex((e: any) => e.id === newEstimate.id);
-    if (idx > -1) {
-      estimates[idx] = newEstimate;
-    } else {
-      estimates.push(newEstimate);
+  const handleSaveEstimate = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
     }
-    localStorage.setItem('estimates', JSON.stringify(estimates));
+    let newEstimate = { ...estimate, id: estimate.id || Date.now().toString(), user_id: user.id, updatedAt: new Date().toISOString() };
+    // 이미 존재하는 견적서면 update, 아니면 insert
+    const { data: existing } = await supabase
+      .from('estimates')
+      .select('id')
+      .eq('id', newEstimate.id)
+      .eq('user_id', user.id);
+    let result;
+    if (existing && existing.length > 0) {
+      result = await supabase
+        .from('estimates')
+        .update(newEstimate)
+        .eq('id', newEstimate.id)
+        .eq('user_id', user.id);
+    } else {
+      result = await supabase
+        .from('estimates')
+        .insert([newEstimate]);
+    }
+    if (result.error) {
+      alert('저장 실패: ' + result.error.message);
+      return;
+    }
     setSnackbarOpen(true);
     setTimeout(() => navigate('/estimates'), 1000);
   };
